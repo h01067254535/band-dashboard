@@ -113,6 +113,12 @@ input{font:inherit;width:100%;padding:11px 12px;border:1px solid var(--line);bor
   </section>
 
   <section class="card">
+    <h2>절반 브레이크 (그림자 신호)</h2>
+    <div style="display:flex;justify-content:space-between"><span id="brk">–</span><b id="brkt">–</b></div>
+    <div style="color:var(--sub);font-size:12px;margin-top:6px" id="brks">250일선 −5% 이탈 → 2배 35% · +1% 회복 → 70% · 관찰용</div>
+  </section>
+
+  <section class="card">
     <h2>트라이팟 (관찰용)</h2>
     <div style="display:flex;justify-content:space-between"><span id="tri">–</span><b id="trig">–</b></div>
     <div style="color:var(--sub);font-size:12px;margin-top:6px" id="tris"></div>
@@ -182,12 +188,13 @@ async function load(tok){
       <tr><td>현금</td><td class="m">KOFR ${h.KOFR_shares}주 · 원화 · 달러</td><td class="r amt">${man(cash)}</td></tr>
       <tr><td>환율</td><td class="m"></td><td class="r">${(+last.fx).toFixed(1)}</td></tr>`;
     chart(log.map(r=>({d:r.date,w:+r.w2x,s:r.signal})),b);
+    if(last.brake){const dn=last.brake==='DOWN';$('brk').textContent=dn?'브레이크 · 하락장':'정상 · 상승장';$('brkt').textContent='2배 목표 '+(dn?35:70)+'%';$('brks').textContent=`나스닥100 250일선 이격 ${(+last.ndx_gap*100).toFixed(1)}% · 이탈 −5% · 회복 +1% · 관찰용`;}
   }else{
     $('asof').textContent='기록 전';chip(null,cfg.active);gauge(b,null);
     const h=cfg.holdings;$('hold').innerHTML=`<tr><td>KQLD</td><td class="r">${h.KQLD_shares}주</td></tr><tr><td>QLD</td><td class="r">${h.QLD_shares}주</td></tr><tr><td>현금</td><td class="r amt">${man(h.cash_krw)} · $${h.cash_usd}</td></tr>`;
   }
   const ev=jr.map(r=>({d:r.date,t:r.type,c:r.changes,wb:r.w_before,wa:r.w_after,m:r.memo}));
-  let prev='HOLD';for(const r of log){if(r.signal!==prev&&r.signal!=='HOLD')ev.push({d:r.date,t:'신호 '+r.signal,c:'',wb:'',wa:r.w2x,m:''});prev=r.signal}
+  let prev='HOLD',pb='';for(const r of log){if(r.signal!==prev&&r.signal!=='HOLD')ev.push({d:r.date,t:'신호 '+r.signal,c:'',wb:'',wa:r.w2x,m:''});prev=r.signal;if(r.brake&&pb&&r.brake!==pb)ev.push({d:r.date,t:'그림자 브레이크 '+r.brake,c:'관찰용 · 실제 매매 아님',wb:'',wa:'',m:''});if(r.brake)pb=r.brake}
   ev.sort((a,b)=>a.d<b.d?1:-1);
   if(ev.length){$('journal').className='';$('journal').innerHTML=ev.slice(0,40).map(e=>`<div class="j"><div class="top"><span class="d">${esc(e.d)}</span><span class="t">${esc(e.t)}</span><span class="w">${e.wb?pct(+e.wb,0)+' → ':''}${e.wa?pct(+e.wa,1):''}</span></div>${e.c?`<div class="c amt">${esc(e.c)}</div>`:''}${e.m?`<div class="memo">${esc(e.m)}</div>`:''}</div>`).join('')}
   try{const r=await fetch('/Tripod-Trading/state.json?t='+Date.now());if(r.ok){const t=await r.json();$('tri').textContent=t.alloc_text;$('trig').textContent=t.gear.toFixed(1)+'배';
