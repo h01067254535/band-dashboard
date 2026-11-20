@@ -193,7 +193,7 @@ async function load(tok){
   try{const r=await fetch('/Tripod-Trading/state.json?t='+Date.now());if(r.ok){const t=await r.json();$('tri').textContent=t.alloc_text;$('trig').textContent=t.gear.toFixed(1)+'배';
     const lc=t.last_change;$('tris').textContent=`${t.state_label} · ${lc.signal_date.slice(4,6)}/${lc.signal_date.slice(6)}부터 · 250일선 ${t.gap_pct>0?'+':''}${t.gap_pct}% · VIX10 ${t.vix_ma.toFixed(1)}`}}catch(e){}
 }
-function showLogin(msg){$('app').style.display='none';$('login').style.display='';$('asof').textContent='';$('err').textContent=msg||''}
+function showLogin(msg){$('app').style.display='none';$('login').style.display='block';$('asof').textContent='';$('err').textContent=msg||''}
 $('save').onclick=async()=>{const t=$('tok').value.trim();if(!t)return;try{await load(t);store.set(KEY,t);$('tok').value=''}catch(e){showLogin(e.message==='auth'?'토큰이 맞지 않거나 권한이 없어요 (band-rule · Contents 읽기).':'불러오기 실패: '+e.message)}};
 $('logout').onclick=()=>{store.del(KEY);showLogin('토큰을 지웠어요.')};
 $('mask').onclick=()=>{const on=!document.body.classList.contains('hide');document.body.classList.toggle('hide',on);store.set(MASK,on?'1':'0');$('mask').textContent=on?'금액 보이기':'금액 가리기'};
