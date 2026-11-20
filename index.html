@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0f1115">
+<title>70:30 밴드</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--ink:#16181d;--sub:#6b7079;--line:#e4e2dc;--band:#d9efe2;--ok:#1f8a56;--buy:#c2410c;--sell:#1d4ed8}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#171a20;--ink:#eceae4;--sub:#8d939d;--line:#2a2e36;--band:#173426;--ok:#4ade80;--buy:#fb923c;--sell:#60a5fa}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;padding:env(safe-area-inset-top) 16px 40px}
+main{max-width:560px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:baseline;padding:20px 2px 12px}
+h1{font-size:17px;margin:0}
+.asof{color:var(--sub);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:12px}
+.big{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.num{font-size:52px;font-weight:700;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.num small{font-size:22px;font-weight:600;margin-left:2px}
+.label{color:var(--sub);font-size:13px;margin-bottom:6px}
+.chip{display:inline-block;padding:6px 12px;border-radius:999px;font-weight:600;font-size:14px;white-space:nowrap}
+.chip.hold{background:var(--band);color:var(--ok)}
+.chip.buy{background:color-mix(in srgb,var(--buy) 15%,transparent);color:var(--buy)}
+.chip.sell{background:color-mix(in srgb,var(--sell) 15%,transparent);color:var(--sell)}
+.chip.off{background:var(--line);color:var(--sub)}
+.gauge{position:relative;height:44px;margin:22px 0 4px}
+.track{position:absolute;top:14px;left:0;right:0;height:16px;border-radius:8px;background:var(--line)}
+.zone{position:absolute;top:14px;height:16px;background:var(--band);border-radius:4px}
+.tick{position:absolute;top:8px;width:2px;height:28px;background:var(--sub);opacity:.5}
+.pin{position:absolute;top:0;width:3px;height:44px;background:var(--ink);border-radius:2px;transform:translateX(-50%)}
+.scale{position:relative;height:16px;color:var(--sub);font-size:12px;font-variant-numeric:tabular-nums}
+.scale span{position:absolute;transform:translateX(-50%)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat .v{font-size:22px;font-weight:650;font-variant-numeric:tabular-nums}
+.stat .s{color:var(--sub);font-size:12px}
+h2{font-size:14px;margin:0 0 12px;color:var(--sub);font-weight:600}
+svg{display:block;width:100%;height:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+td{padding:7px 0;border-top:1px solid var(--line)}
+tr:first-child td{border-top:0}
+td.r{text-align:right}
+td.m{color:var(--sub)}
+.j{padding:10px 0;border-top:1px solid var(--line);font-size:14px}
+.j:first-of-type{border-top:0}
+.j .top{display:flex;justify-content:space-between;gap:10px}
+.j .d{color:var(--sub);font-variant-numeric:tabular-nums}
+.j .t{font-weight:600;flex:1;margin-left:10px}
+.j .w{color:var(--sub);font-variant-numeric:tabular-nums}
+.j .c{color:var(--sub);font-size:13px;margin-top:2px}
+.j .memo{font-size:13px;margin-top:2px}
+.empty{color:var(--sub);font-size:14px}
+.bar{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:6px 0 8px;background:var(--line)}
+.bar i{display:block}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--sub)}
+.legend b{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}
+footer{color:var(--sub);font-size:12px;text-align:center;margin-top:18px;line-height:1.7}
+button,.btn{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:9px 14px}
+input{font:inherit;width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);margin:8px 0}
+.row{display:flex;gap:8px;justify-content:flex-end}
+.hide .amt{filter:blur(7px)}
+.err{color:var(--buy);font-size:14px}
+#login{display:none}
+</style>
+</head>
+<body>
+<main>
+  <header><h1>70:30 밴드</h1><span class="asof" id="asof"></span></header>
+
+  <section class="card" id="login">
+    <h2>처음 한 번만</h2>
+    <div style="font-size:14px">band-rule 읽기 전용 토큰을 붙여넣으세요. 이 기기에만 저장되고 다른 곳으로 보내지지 않습니다.</div>
+    <input id="tok" type="password" placeholder="github_pat_…" autocomplete="off">
+    <div class="row"><button id="save">저장</button></div>
+    <div class="err" id="err"></div>
+  </section>
+
+  <div id="app" style="display:none">
+  <section class="card">
+    <div class="big">
+      <div><div class="label">2배 비중</div><div class="num" id="w">–</div></div>
+      <span class="chip off" id="chip">–</span>
+    </div>
+    <div class="gauge"><div class="track"></div><div class="zone" id="zone"></div><div class="tick" id="t70"></div><div class="pin" id="pin" style="left:0"></div></div>
+    <div class="scale" id="scale"></div>
+  </section>
+
+  <section class="grid">
+    <div class="card stat"><div class="label">실질 레버리지</div><div class="v" id="lev">–</div><div class="s">2배 비중 × 2</div></div>
+    <div class="card stat"><div class="label">총 평가액</div><div class="v amt" id="tot">–</div><div class="s">비상금 제외</div></div>
+    <div class="card stat"><div class="label">매수 신호까지</div><div class="v" id="tolow">–</div><div class="s" id="tolows"></div></div>
+    <div class="card stat"><div class="label">매도 신호까지</div><div class="v" id="tohigh">–</div><div class="s" id="tohighs"></div></div>
+  </section>
+
+  <section class="card">
+    <h2>구성</h2>
+    <div class="bar" id="splitbar"></div>
+    <div class="legend" id="legend"></div>
+    <table id="hold" style="margin-top:12px"></table>
+  </section>
+
+  <section class="card">
+    <h2>2배 비중 추이</h2>
+    <div id="chart" class="empty">기록이 2일 이상 쌓이면 그래프가 그려집니다.</div>
+  </section>
+
+  <section class="card">
+    <h2>매매일지</h2>
+    <div id="journal" class="empty">아직 기록이 없습니다.</div>
+  </section>
+
+  <section class="card">
+    <h2>트라이팟 (관찰용)</h2>
+    <div style="display:flex;justify-content:space-between"><span id="tri">–</span><b id="trig">–</b></div>
+    <div style="color:var(--sub);font-size:12px;margin-top:6px" id="tris"></div>
+  </section>
+
+  <div class="row" style="justify-content:space-between">
+    <button id="mask">금액 가리기</button>
+    <button id="logout">토큰 지우기</button>
+  </div>
+  </div>
+
+  <footer>80% 초과 → 70%로 매도 · 60% 미만 → 70%로 매수 · 그 사이 무행동<br>정규장 종가 기준 · 다음 거래일 시장가 집행</footer>
+</main>
+<script>
+const REPO='h01067254535/band-rule', KEY='band_token', MASK='band_mask';
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+const $=id=>document.getElementById(id);
+const LO=40,HI=100,X=p=>((p-LO)/(HI-LO))*100;
+const pct=(v,d=1)=>v==null||isNaN(v)?'–':(v*100).toFixed(d)+'%';
+const sgn=(v,d=0)=>v==null?'–':(v>0?'+':'')+(v*100).toFixed(d)+'%';
+const man=v=>v==null?'–':Math.round(v/1e4).toLocaleString('ko-KR')+'만';
+function csv(t){const out=[];let row=[],f='',q=false;for(let i=0;i<t.length;i++){const c=t[i];
+  if(q){if(c=='"'&&t[i+1]=='"'){f+='"';i++}else if(c=='"')q=false;else f+=c}
+  else if(c=='"')q=true;else if(c==','){row.push(f);f=''}else if(c=='\n'){row.push(f);out.push(row);row=[];f=''}else if(c!='\r')f+=c}
+  if(f||row.length){row.push(f);out.push(row)}
+  if(!out.length)return[];const h=out[0];return out.slice(1).filter(r=>r.length>1).map(r=>Object.fromEntries(h.map((k,i)=>[k,r[i]])))}
+async function gh(path,tok){
+  const r=await fetch(`https://api.github.com/repos/${REPO}/contents/${path}?t=${Date.now()}`,{headers:{Authorization:'Bearer '+tok,Accept:'application/vnd.github.raw+json'},cache:'no-store'});
+  if(r.status==404)return null; if(r.status==401||r.status==403)throw new Error('auth'); if(!r.ok)throw new Error('http '+r.status);
+  return await r.text();
+}
+function chip(sig,active){const c=$('chip');
+  if(!active){c.className='chip off';c.textContent='점검 꺼짐';return}
+  const m={HOLD:['hold','밴드 안 · 무행동'],BUY:['buy','매수 신호'],BUY_NO_CASH:['buy','매수 신호 · 현금 없음'],SELL:['sell','매도 신호']}[sig]||['off','기록 전'];
+  c.className='chip '+m[0];c.textContent=m[1]}
+function gauge(b,w){$('zone').style.left=X(b.low*100)+'%';$('zone').style.width=(X(b.high*100)-X(b.low*100))+'%';$('t70').style.left=X(b.target*100)+'%';
+  if(w!=null)$('pin').style.left=Math.max(0,Math.min(100,X(w*100)))+'%';
+  $('scale').innerHTML=[LO,b.low*100,b.target*100,b.high*100,HI].map(v=>`<span style="left:${X(v)}%">${Math.round(v)}</span>`).join('')}
+function chart(h,b){if(h.length<2)return;
+  const W=520,H=180,P=28,ws=h.map(r=>r.w*100),ys=[Math.min(b.low*100-5,Math.min(...ws)-3),Math.max(b.high*100+5,Math.max(...ws)+3)];
+  const x=i=>P+(i/(h.length-1))*(W-P-8),y=v=>H-22-((v*100-ys[0])/(ys[1]-ys[0]))*(H-30);
+  const line=h.map((r,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${y(r.w).toFixed(1)}`).join('');
+  const dots=h.map((r,i)=>r.s!=='HOLD'?`<circle cx="${x(i)}" cy="${y(r.w)}" r="3.5" fill="${r.s==='SELL'?'var(--sell)':'var(--buy)'}"/>`:'').join('');
+  const lbl=[[0,'start'],[Math.floor((h.length-1)/2),'middle'],[h.length-1,'end']].map(([i,a])=>`<text x="${x(i)}" y="${H-4}" font-size="11" fill="var(--sub)" text-anchor="${a}">${h[i].d.slice(5)}</text>`).join('');
+  $('chart').className='';$('chart').innerHTML=`<svg viewBox="0 0 ${W} ${H}"><rect x="${P}" y="${y(b.high)}" width="${W-P-8}" height="${y(b.low)-y(b.high)}" fill="var(--band)"/><line x1="${P}" x2="${W-8}" y1="${y(b.target)}" y2="${y(b.target)}" stroke="var(--sub)" stroke-dasharray="3 4" opacity=".6"/>${[b.low,b.target,b.high].map(v=>`<text x="${P-6}" y="${y(v)+4}" font-size="11" fill="var(--sub)" text-anchor="end">${Math.round(v*100)}</text>`).join('')}<path d="${line}" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round"/>${dots}${lbl}</svg>`}
+function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+async function load(tok){
+  $('asof').textContent='불러오는 중…';
+  const [cfgT,logT,jrT]=await Promise.all([gh('config.json',tok),gh('data/log.csv',tok),gh('data/journal.csv',tok)]);
+  const cfg=JSON.parse(cfgT), b=cfg.band, log=logT?csv(logT):[], jr=jrT?csv(jrT):[];
+  $('login').style.display='none';$('app').style.display='';
+  const last=log[log.length-1];
+  if(last){
+    const w=+last.w2x,tot=+last.total_krw,kq=+last.kqld_krw,ql=+last.qld_krw,cash=+last.cash_krw,two=kq+ql;
+    $('asof').textContent=last.date+' 종가 기준';
+    $('w').innerHTML=(w*100).toFixed(1)+'<small>%</small>';chip(last.signal,cfg.active);gauge(b,w);
+    $('lev').textContent=(+last.leverage).toFixed(2)+'배';$('tot').textContent=man(tot);
+    const lo=(b.low/(1-b.low))*cash/two-1, hi=(b.high/(1-b.high))*cash/two-1;
+    $('tolow').textContent='나스닥 '+sgn(lo/2);$('tolows').textContent='2배 자산 '+sgn(lo)+' · 대략';
+    $('tohigh').textContent='나스닥 '+sgn(hi/2);$('tohighs').textContent='2배 자산 '+sgn(hi)+' · 대략';
+    const parts=[['KQLD (ISA)',kq,'var(--ink)'],['QLD (직투)',ql,'var(--sub)'],['현금',cash,'var(--ok)']];
+    $('splitbar').innerHTML=parts.map(p=>`<i style="width:${p[1]/tot*100}%;background:${p[2]}"></i>`).join('');
+    $('legend').innerHTML=parts.map(p=>`<span><b style="background:${p[2]}"></b>${p[0]} ${pct(p[1]/tot,0)}</span>`).join('');
+    const h=cfg.holdings;
+    $('hold').innerHTML=`<tr><td>KQLD</td><td class="m">${h.KQLD_shares.toLocaleString()}주 × ${(+last.kqld_px).toLocaleString()}원</td><td class="r amt">${man(kq)}</td></tr>
+      <tr><td>QLD</td><td class="m">${h.QLD_shares.toLocaleString()}주 × $${(+last.qld_px_usd).toFixed(2)}</td><td class="r amt">${man(ql)}</td></tr>
+      <tr><td>현금</td><td class="m">KOFR ${h.KOFR_shares}주 · 원화 · 달러</td><td class="r amt">${man(cash)}</td></tr>
+      <tr><td>환율</td><td class="m"></td><td class="r">${(+last.fx).toFixed(1)}</td></tr>`;
+    chart(log.map(r=>({d:r.date,w:+r.w2x,s:r.signal})),b);
+  }else{
+    $('asof').textContent='기록 전';chip(null,cfg.active);gauge(b,null);
+    const h=cfg.holdings;$('hold').innerHTML=`<tr><td>KQLD</td><td class="r">${h.KQLD_shares}주</td></tr><tr><td>QLD</td><td class="r">${h.QLD_shares}주</td></tr><tr><td>현금</td><td class="r amt">${man(h.cash_krw)} · $${h.cash_usd}</td></tr>`;
+  }
+  const ev=jr.map(r=>({d:r.date,t:r.type,c:r.changes,wb:r.w_before,wa:r.w_after,m:r.memo}));
+  let prev='HOLD';for(const r of log){if(r.signal!==prev&&r.signal!=='HOLD')ev.push({d:r.date,t:'신호 '+r.signal,c:'',wb:'',wa:r.w2x,m:''});prev=r.signal}
+  ev.sort((a,b)=>a.d<b.d?1:-1);
+  if(ev.length){$('journal').className='';$('journal').innerHTML=ev.slice(0,40).map(e=>`<div class="j"><div class="top"><span class="d">${esc(e.d)}</span><span class="t">${esc(e.t)}</span><span class="w">${e.wb?pct(+e.wb,0)+' → ':''}${e.wa?pct(+e.wa,1):''}</span></div>${e.c?`<div class="c amt">${esc(e.c)}</div>`:''}${e.m?`<div class="memo">${esc(e.m)}</div>`:''}</div>`).join('')}
+  try{const r=await fetch('/Tripod-Trading/state.json?t='+Date.now());if(r.ok){const t=await r.json();$('tri').textContent=t.alloc_text;$('trig').textContent=t.gear.toFixed(1)+'배';
+    const lc=t.last_change;$('tris').textContent=`${t.state_label} · ${lc.signal_date.slice(4,6)}/${lc.signal_date.slice(6)}부터 · 250일선 ${t.gap_pct>0?'+':''}${t.gap_pct}% · VIX10 ${t.vix_ma.toFixed(1)}`}}catch(e){}
+}
+function showLogin(msg){$('app').style.display='none';$('login').style.display='';$('asof').textContent='';$('err').textContent=msg||''}
+$('save').onclick=async()=>{const t=$('tok').value.trim();if(!t)return;try{await load(t);store.set(KEY,t);$('tok').value=''}catch(e){showLogin(e.message==='auth'?'토큰이 맞지 않거나 권한이 없어요 (band-rule · Contents 읽기).':'불러오기 실패: '+e.message)}};
+$('logout').onclick=()=>{store.del(KEY);showLogin('토큰을 지웠어요.')};
+$('mask').onclick=()=>{const on=!document.body.classList.contains('hide');document.body.classList.toggle('hide',on);store.set(MASK,on?'1':'0');$('mask').textContent=on?'금액 보이기':'금액 가리기'};
+if(store.get(MASK)==='1'){document.body.classList.add('hide');$('mask').textContent='금액 보이기'}
+const t=store.get(KEY); if(t){load(t).catch(e=>showLogin(e.message==='auth'?'토큰이 만료됐거나 권한이 없어요. 다시 넣어 주세요.':'불러오기 실패: '+e.message))}else showLogin();
+</script>
+</body>
+</html>
