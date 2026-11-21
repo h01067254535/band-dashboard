@@ -37,6 +37,8 @@ h1{font-size:17px;margin:0}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .stat .v{font-size:22px;font-weight:650;font-variant-numeric:tabular-nums}
 .stat .s{color:var(--sub);font-size:12px}
+.up{color:var(--buy)}.dn{color:var(--sell)}
+.mbar{height:6px;border-radius:3px;background:var(--ink);opacity:.75}
 h2{font-size:14px;margin:0 0 12px;color:var(--sub);font-weight:600}
 svg{display:block;width:100%;height:auto}
 table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
@@ -91,6 +93,8 @@ input{font:inherit;width:100%;padding:11px 12px;border:1px solid var(--line);bor
   <section class="grid">
     <div class="card stat"><div class="label">실질 레버리지</div><div class="v" id="lev">–</div><div class="s">2배 비중 × 2</div></div>
     <div class="card stat"><div class="label">총 평가액</div><div class="v amt" id="tot">–</div><div class="s">비상금 제외</div></div>
+    <div class="card stat"><div class="label">전 거래일 대비</div><div class="v amt" id="dchg">–</div><div class="s" id="dchgs">입출금 포함</div></div>
+    <div class="card stat"><div class="label">이번 달</div><div class="v amt" id="mchg">–</div><div class="s" id="mchgs">월초 대비 · 입출금 포함</div></div>
     <div class="card stat"><div class="label">매수 신호까지</div><div class="v" id="tolow">–</div><div class="s" id="tolows"></div></div>
     <div class="card stat"><div class="label">매도 신호까지</div><div class="v" id="tohigh">–</div><div class="s" id="tohighs"></div></div>
   </section>
@@ -105,6 +109,11 @@ input{font:inherit;width:100%;padding:11px 12px;border:1px solid var(--line);bor
   <section class="card">
     <h2>2배 비중 추이</h2>
     <div id="chart" class="empty">기록이 2일 이상 쌓이면 그래프가 그려집니다.</div>
+  </section>
+
+  <section class="card">
+    <h2>월별 추이</h2>
+    <div id="monthly" class="empty">월말 기록이 쌓이면 표시됩니다.</div>
   </section>
 
   <section class="card">
@@ -188,6 +197,15 @@ async function load(tok){
       <tr><td>현금</td><td class="m">KOFR ${h.KOFR_shares}주 · 원화 · 달러</td><td class="r amt">${man(cash)}</td></tr>
       <tr><td>환율</td><td class="m"></td><td class="r">${(+last.fx).toFixed(1)}</td></tr>`;
     chart(log.map(r=>({d:r.date,w:+r.w2x,s:r.signal})),b);
+    const fmtD=(v,base)=>`<span class="${v>=0?'up':'dn'}">${v>=0?'+':'−'}${man(Math.abs(v))}</span>`;
+    if(log.length>1){const p=log[log.length-2],dv=tot-(+p.total_krw);$('dchg').innerHTML=fmtD(dv);$('dchgs').textContent=`${p.date.slice(5)} 대비 ${(dv/(+p.total_krw)*100).toFixed(1)}% · 비중 ${((w-(+p.w2x))*100).toFixed(1)}%p`}
+    const months={};for(const r of log){months[r.date.slice(0,7)]=r}
+    const mk=Object.keys(months).sort();const cur=mk[mk.length-1];
+    const base=mk.length>1?+months[mk[mk.length-2]].total_krw:+log.find(r=>r.date.startsWith(cur)).total_krw;
+    {const mv=tot-base;$('mchg').innerHTML=fmtD(mv);$('mchgs').textContent=(mk.length>1?'전월말':'첫 기록')+' 대비 '+(mv/base*100).toFixed(1)+'% · 입출금 포함'}
+    if(mk.length){const mx=Math.max(...mk.map(k=>+months[k].total_krw));$('monthly').className='';
+      $('monthly').innerHTML='<table>'+mk.slice(-24).reverse().map((k,i,arr)=>{const r=months[k],t=+r.total_krw,j=mk.indexOf(k),pv=j>0?+months[mk[j-1]].total_krw:null,ch=pv?(t/pv-1):null;
+        return `<tr><td>${k.slice(2).replace('-','.')}${k===cur?' (진행중)':''}</td><td style="width:35%"><div class="mbar" style="width:${t/mx*100}%"></div></td><td class="r amt">${man(t)}</td><td class="r ${ch==null?'m':ch>=0?'up':'dn'}" style="width:62px">${ch==null?'–':(ch>=0?'+':'')+(ch*100).toFixed(1)+'%'}</td><td class="r m" style="width:48px">${pct(+r.w2x,0)}</td></tr>`}).join('')+'</table><div style="color:var(--sub);font-size:12px;margin-top:8px">월말 평가액 · 전월 대비 · 2배 비중 (월급 입금 포함)</div>'}
     if(last.brake){const dn=last.brake==='DOWN';$('brk').textContent=dn?'브레이크 · 하락장':'정상 · 상승장';$('brkt').textContent='2배 목표 '+(dn?35:70)+'%';$('brks').textContent=`나스닥100 250일선 이격 ${(+last.ndx_gap*100).toFixed(1)}% · 이탈 −5% · 회복 +1% · 관찰용`;}
   }else{
     $('asof').textContent='기록 전';chip(null,cfg.active);gauge(b,null);
