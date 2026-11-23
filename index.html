@@ -176,7 +176,7 @@ function chart(h,b){if(h.length<2)return;
 function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 async function load(tok){
   $('asof').textContent='불러오는 중…';
-  const [cfgT,logT,jrT]=await Promise.all([gh('config.json',tok),gh('data/log.csv',tok),gh('data/journal.csv',tok)]);
+  const [cfgT,logT,jrT,trT]=await Promise.all([gh('config.json',tok),gh('data/log.csv',tok),gh('data/journal.csv',tok),gh('data/tripod_log.csv',tok).catch(()=>null)]);
   const cfg=JSON.parse(cfgT), b=cfg.band, log=logT?csv(logT):[], jr=jrT?csv(jrT):[];
   $('login').style.display='none';$('app').style.display='';
   const last=log[log.length-1];
@@ -213,6 +213,7 @@ async function load(tok){
   }
   const ev=jr.map(r=>({d:r.date,t:r.type,c:r.changes,wb:r.w_before,wa:r.w_after,m:r.memo}));
   let prev='HOLD',pb='';for(const r of log){if(r.signal!==prev&&r.signal!=='HOLD')ev.push({d:r.date,t:'신호 '+r.signal,c:'',wb:'',wa:r.w2x,m:''});prev=r.signal;if(r.brake&&pb&&r.brake!==pb)ev.push({d:r.date,t:'그림자 브레이크 '+r.brake,c:'관찰용 · 실제 매매 아님',wb:'',wa:'',m:''});if(r.brake)pb=r.brake}
+  for(const r of (trT?csv(trT):[]))ev.push({d:r.signal_date,t:'트라이팟 → '+r.to_alloc,c:`${r.from_alloc} (${r.from_gear}배) → ${r.to_alloc} (${r.to_gear}배) · 250일선 ${r.gap_pct}% · VIX10 ${r.vix_ma} · 관찰용`,wb:'',wa:'',m:''});
   ev.sort((a,b)=>a.d<b.d?1:-1);
   if(ev.length){$('journal').className='';$('journal').innerHTML=ev.slice(0,40).map(e=>`<div class="j"><div class="top"><span class="d">${esc(e.d)}</span><span class="t">${esc(e.t)}</span><span class="w">${e.wb?pct(+e.wb,0)+' → ':''}${e.wa?pct(+e.wa,1):''}</span></div>${e.c?`<div class="c amt">${esc(e.c)}</div>`:''}${e.m?`<div class="memo">${esc(e.m)}</div>`:''}</div>`).join('')}
   try{const r=await fetch('/Tripod-Trading/state.json?t='+Date.now());if(r.ok){const t=await r.json();$('tri').textContent=t.alloc_text;$('trig').textContent=t.gear.toFixed(1)+'배';
